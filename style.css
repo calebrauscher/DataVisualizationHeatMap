@@ -10,17 +10,37 @@ body {
   min-height: 100%;
 }
 
+#title {
+  font-size: 1.4em;
+  font-weight: bolder;
+  text-align: center;
+}
+
+.text {
+  font-size: 1em;
+  text-align: center;
+}
+
 svg {
   background-color: whitesmoke;
 }
 
-#canvas {
-  min-height: 600px;
-  min-width: 1200px;
+.legend-text {
+  font-size: 0.6em;
 }
 
 #tooltip {
-  visibility: hidden;
+  position: absolute;
+  display: none;
+  min-width: 80px;
   height: auto;
-  width: auto;
+  color: white;
+  background: none repeat scroll 0 0 rgba(41, 41, 41, 0.7);
+  border: 1px solid #333;
+  line-height: 1.4em;
+  border-radius: 5px;
+  padding: 14px;
+  text-align: center;
+  font-size: 0.9em;
+  box-shadow: 1px 1px 20px rgba(31, 31, 31, 0.6);
 }

@@ -8,28 +8,7 @@
     <title>Data Visualization Heat Map</title>
   </head>
   <body>
-    <h1 id="title">Monthly Global Land-Surface Temperature</h1>
-    <h3 id="description">Temperatures from 1753 to 2015. Average is 8.66°C</h3>
-    <div id="tooltip"></div>
     <svg id="canvas"></svg>
-    <svg id="legend">
-      <g>
-        <rect x="10" y="0" width="40" height="40" fill="SteelBlue"></rect>
-        <rect x="60" y="20" fill="white">Variance of -1 or less</rect>
-      </g>
-      <g>
-        <rect x="10" y="40" width="40" height="40" fill="LightSteelBlue"></rect>
-        <rect x="60" y="60" fill="white">Variance of -1 to 0</rect>
-      </g>
-      <g>
-        <rect x="10" y="80" width="40" height="40" fill="Orange"></rect>
-        <rect x="60" y="100" fill="white">Variance 0 to 1</rect>
-      </g>
-      <g>
-        <rect x="10" y="120" width="40" height="40" fill="Crimson"></rect>
-        <rect x="60" y="140" fill="white">Variance of +1 or more</rect>
-      </g>
-    </svg>
   </body>
   <script defer src="./script.js"></script>
   <script

@@ -1,138 +1,181 @@
 const url =
   "https://raw.githubusercontent.com/freeCodeCamp/ProjectReferenceData/master/global-temperature.json";
 
-const req = new XMLHttpRequest();
-const WIDTH = 1200;
-const HEIGHT = 600;
-const PADDING = 60;
+const colors = [
+  "#000000",
+  "#000033",
+  "#000099",
+  "#0000ff",
+  "#6666ff",
+  "#ccccff",
+  "#b3ffcc",
+  "#4dff88",
+  "#00b33c",
+  "#ffff00",
+  "#ff6633",
+  "#b32d00",
+  "#ff3300",
+];
 
-let minYear;
-let maxYear;
+const tooltip = d3.select("body").append("div").attr("id", "tooltip");
 
+const width = 850;
+const height = 500;
+const margin = { top: 110, right: 100, bottom: 130, left: 100 };
 let baseTemp;
-let values = [];
+let monthlyVariance = [];
 
-let xScale;
-let yScale;
+const formatMonths = (d) => {
+  const months = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+  return months[d - 1];
+};
 
-const canvas = d3.select("#canvas");
-canvas.attr("width", WIDTH);
-canvas.attr("height", HEIGHT);
+const fillColor = (d) => {
+  const color = Math.floor(d["baseTemperature"] + d["variance"]);
+  return colors[color];
+};
 
-const tooltip = d3.select("#tooltip");
+const svg = d3.select("#canvas");
 
-const generateScales = () => {
-  minYear = d3.min(values, (item) => {
+svg
+  .attr("width", width + margin.left + margin.right)
+  .attr("height", height + margin.top + margin.bottom);
+
+d3.json(url).then((data, error) => {
+  if (error) console.log(error);
+
+  let baseTemp = data["baseTemperature"];
+  let monthlyVariance = data["monthlyVariance"];
+
+  const minYear = d3.min(monthlyVariance, (item) => {
     return item["year"];
   });
 
-  maxYear = d3.max(values, (item) => {
+  const maxYear = d3.max(monthlyVariance, (item) => {
     return item["year"];
   });
 
-  xScale = d3
+  const xScale = d3
     .scaleLinear()
     .domain([minYear, maxYear + 1])
-    .range([PADDING, WIDTH - PADDING]);
+    .range([0, width]);
 
-  yScale = d3
-    .scaleTime()
-    .domain([new Date(0, 0, 0, 0, 0, 0, 0), new Date(0, 12, 0, 0, 0, 0, 0)])
-    .range([PADDING, HEIGHT - PADDING]);
-};
-
-const drawCells = () => {
-  canvas
-    .selectAll("rect")
-    .data(values)
-    .enter()
-    .append("rect")
-    .attr("class", "cell")
-    .attr("fill", (item) => {
-      const variance = item["variance"];
-      if (variance <= -1) {
-        return "SteelBlue";
-      } else if (variance <= 0) {
-        return "LightSteelBlue";
-      } else if (variance <= 1) {
-        return "Orange";
-      }
-      return "Crimson";
-    })
-    .attr("data-year", (item) => {
-      return item["year"];
-    })
-    .attr("data-month", (item) => {
-      return item["month"] - 1;
-    })
-    .attr("data-temp", (item) => {
-      return baseTemp + item["variance"];
-    })
-    .attr("height", (HEIGHT - 2 * PADDING) / 12)
-    .attr("y", (item) => {
-      return yScale(new Date(0, item["month"] - 1, 0, 0, 0, 0, 0));
-    })
-    .attr("width", (item) => {
-      const numberOfYears = maxYear - minYear;
-      return (WIDTH - 2 * PADDING) / numberOfYears;
-    })
-    .attr("x", (item) => {
-      return xScale(item["year"]);
-    })
-    .on("mouseover", (item) => {
-      tooltip.transition().style("visibility", "visible");
-      const monthNames = [
-        "January",
-        "February",
-        "March",
-        "April",
-        "May",
-        "June",
-        "July",
-        "August",
-        "September",
-        "October",
-        "November",
-        "December",
-      ];
-      tooltip.text(
-        `${item["year"]} ${monthNames[item["month"] - 1]} - ${
-          baseTemp + item["variance"]
-        }°C`
-      );
-      tooltip.attr("data-year", item["year"]);
-    })
-    .on("mouseout", (item) => {
-      tooltip.transition().style("visibility", "hidden");
-    });
-};
-
-const drawAxes = () => {
   const xAxis = d3.axisBottom(xScale).tickFormat(d3.format("d"));
 
-  canvas
+  const yScale = d3
+    .scaleBand()
+    .domain([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
+    .range([0, height])
+    .round(0, 0);
+
+  const yAxis = d3
+    .axisLeft(yScale)
+    .tickValues(yScale.domain())
+    .tickFormat((month) => formatMonths(month))
+    .tickSize(5, 0);
+
+  svg
     .append("g")
-    .call(xAxis)
-    .attr("transform", `translate(0, ${HEIGHT - PADDING})`)
-    .attr("id", "x-axis");
+    .attr("id", "x-axis")
+    .attr("transform", `translate(${margin.left}, ${height + margin.top})`)
+    .call(xAxis);
 
-  const yAxis = d3.axisLeft(yScale).tickFormat(d3.timeFormat("%B"));
-
-  canvas
+  svg
     .append("g")
-    .call(yAxis)
-    .attr("transform", `translate(${PADDING}, 0)`)
-    .attr("id", "y-axis");
-};
+    .attr("id", "y-axis")
+    .attr("transform", `translate(${margin.left}, ${margin.top})`)
+    .call(yAxis);
 
-req.open("GET", url, true);
-req.onload = () => {
-  const object = JSON.parse(req.responseText);
-  baseTemp = object["baseTemperature"];
-  values = object["monthlyVariance"];
+  const cellWidth = width / (maxYear - minYear);
+  const cellHeight = height / 12;
 
-  generateScales();
-  drawCells();
-  drawAxes();
-};
-req.send();
+  svg
+    .selectAll("rect")
+    .data(data["monthlyVariance"])
+    .enter()
+    .append("rect")
+    .attr("height", cellHeight)
+    .attr("width", cellWidth)
+    .attr("x", (d) => xScale(d["year"]))
+    .attr("y", (d) => (d["month"] - 1) * cellHeight)
+    .attr("transform", `translate(${margin.left}, ${margin.top})`)
+    .attr("class", "cell")
+    .attr("data-month", (d) => [d["month"] - 1])
+    .attr("data-year", (d) => d["year"])
+    .attr("data-temp", (d) => baseTemp + d["variance"])
+    .attr("fill", (d) =>
+      fillColor({
+        baseTemperature: baseTemp,
+        variance: d["variance"],
+      })
+    )
+    .on("mousemove", (d, i) => {
+      tooltip
+        .attr("data-year", d["year"])
+        .style("display", "inline-block")
+        .style("left", d3.event.pageX + 15 + "px")
+        .style("top", d3.event.pageY - 110 + "px").html(`
+            Year: ${parseInt(d["year"], 10)}<br />
+            Temperature: ${data["baseTemperature"] - d["variance"]}°C<br />
+            Variance: ${d["variance"]}°C
+            `);
+    })
+    .on("mouseout", (d) => {
+      tooltip.style("display", "none");
+    });
+});
+
+svg
+  .append("text")
+  .text("Monthly Global Land-Surface Temperature 1753 - 2015")
+  .attr("x", margin.left + 20)
+  .attr("y", 50)
+  .attr("id", "title");
+
+svg
+  .append("text")
+  .text(
+    "Temperatures are in Celsius and are reported as abnormalities based on an avergae of 8.66°C between 1753 and 2015."
+  )
+  .attr("x", margin.left + 20)
+  .attr("y", 75)
+  .attr("class", "text")
+  .attr("id", "description");
+
+let padding = 0;
+const legend = svg
+  .append("g")
+  .attr("id", "legend")
+  .attr("transform", `translate(${margin.left + 20}, ${margin.top + 50})`);
+
+colors.forEach((color, i) => {
+  legend
+    .append("rect")
+    .attr("width", 30)
+    .attr("height", 30)
+    .attr("x", padding)
+    .attr("y", height)
+    .style("fill", color);
+
+  legend
+    .append("text")
+    .text(`${i}°C`)
+    .attr("x", padding + 8)
+    .attr("y", height + 42)
+    .attr("class", "legend-text");
+
+  padding += 30;
+});
